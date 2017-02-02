@@ -23,7 +23,7 @@
 
 
 
-class search_VZLA
+class busca_VZLA
 {
 
 	public $atrTipo , $atrIdentidad , $atrDigito , $atrRif ;
@@ -437,7 +437,7 @@ class search_VZLA
 }
 
 
-$objRif = new search_VZLA( "V" , 12527699 );
+$objRif = new busca_VZLA( "V" , 12527699 );
 
 var_dump( $objRif->flCalcularDigito("V" , 12527699) );
 echo "<hr>";
