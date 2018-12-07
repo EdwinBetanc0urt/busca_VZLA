@@ -1,24 +1,27 @@
 <?php
 
 /**
- * @descripcion: Consulta datos del CNE, SENIAT, IVSS (pensiones, próximamente cuenta individual) y futuramente INTT (licencias y multas)
+ * Buscar datos de Personas en BD de Venezuela
+ *
+ * @descripcion: Consulta datos del CNE, SENIAT, IVSS (pensiones, próximamente
+ *	cuenta individual) y futuramente INTT (licencias y multas)
  * @author: Edwin Betancourt <EdwinBetanc0urt@hotmail.com>
- * @author: Diego Chavez <DJChvz18@gmail.com> 
+ * @author: Diego Chavez <DJChvz18@gmail.com>
  * @license: GNU GPL v3,  Licencia Pública General de GNU 3.
  * @license: CC BY-SA, Creative  Commons  Atribución  - CompartirIgual (CC BY-SA) 4.0 Internacional.
  * @category Libreria
  * @package: busca_VZLA.php
- * @since: 
- * @Fecha de Modificacion: 31/05/2017
- * @version: 0.9.5
- * @Fecha de Creacion: 12/02/2016
+ * @since:
+ * @Fecha de Modificación: 25/Agosto/2018
+ * @version: 0.9.8
+ * @Fecha de Creación: 12/02/2016
  **/
 
 
 /**
 		ESTA LIBRERIA ESTÁ HECHA CON FINES ACADEMICOS, SU DISTRIBUCIÓN ES TOTALMENTE
 	GRATUITA, BAJO LA LICENCIA GNU GPL v3 y CC BY-SA v4 Internacional, CUALQUIER,
-	ADAPTACIÓN MODIFICACIÓN Y/O MEJORA QUE SE HAGA APARTIR DE ESTE CODIGO DEBE SER 
+	ADAPTACIÓN MODIFICACIÓN Y/O MEJORA QUE SE HAGA APARTIR DE ESTE CODIGO DEBE SER
 	NOTIFICADA Y ENVIADA A LA FUENTE, COMUNIDAD O REPOSITORIO DE LA CUAL FUE OBTENIDA
 	Y/O A SUS CREADORES:
 		* Edwin Betancourt 	EdwinBetanc0urt@hotmail.com
@@ -31,30 +34,30 @@
 			* Obtiene los datos del IVSS pensiones si recibe pensiones mediante la cédula de identidad.
 			* Obtendrá los datos del INTT mediante la cédula de identidad y fecha de nacimiento.
 			* Re-ordena los nombres y apellidos que puedan ser obtenidos.
-*/
+ */
 
 
 
-class busca_VZLA {
+class busca_VZLA
+{
+	public $atrTipo, $atrIdentidad, $atrDigito, $atrRif;
 
-	public $atrTipo , $atrIdentidad , $atrDigito , $atrRif ;
 
-
-	protected $atrURL_IVSS_Pensiones = array ( 
-		0 => "http://www.ivss.gob.ve:28080/Pensionado/PensionadoCTRL?boton=Consultar&nacionalidad=" ,
-		1 => "&cedula=" ,
-		2 => "&d1=" ,
-		3 => "&m1=" ,
+	protected $atrURL_IVSS_Pensiones = array (
+		0 => "http://www.ivss.gob.ve:28080/Pensionado/PensionadoCTRL?boton=Consultar&nacionalidad=",
+		1 => "&cedula=",
+		2 => "&d1=",
+		3 => "&m1=",
 		4 => "&y1="
 	);
 
 
-	protected $atrURL_IVSS_Individual = array ( 
-		0 => "http://www.ivss.gob.ve:28083/CuentaIndividualIntranet/CtaIndividual_PortalCTRL?nacionalidad_aseg=" , 
-		1 => "&cedula_aseg=" , 
-		2 => "&d=" , 
-		3 => "&m=" , 
-		4 => "&y=" 
+	protected $atrURL_IVSS_Individual = array (
+		0 => "http://www.ivss.gob.ve:28083/CuentaIndividualIntranet/CtaIndividual_PortalCTRL?nacionalidad_aseg=",
+		1 => "&cedula_aseg=",
+		2 => "&d=",
+		3 => "&m=",
+		4 => "&y="
 	);
 
 
@@ -63,104 +66,110 @@ class busca_VZLA {
 	 * solo funciona utilizando el método POST
 	 */
 	protected $atrURL_INTT = array (
-		0 => "http://www.intt.gob.ve/repositorio/consultas_web/consultas_publicas/procesador_publicas.php" 
+		0 => "http://www.intt.gob.ve/repositorio/consultas_web/consultas_publicas/procesador_publicas.php"
 	);
 
 
 	protected $atrURL_SENIAT = array (
-		0 => "http://contribuyente.seniat.gob.ve/getContribuyente/getrif?rif=" 
+		0 => "http://contribuyente.seniat.gob.ve/getContribuyente/getrif?rif="
 	);
 	protected $atrURL_SENIAT_2 = array (
-		0 => "http://contribuyente.seniat.gob.ve/BuscaRif/BuscaRif.jsp?p_rif=" 
+		0 => "http://contribuyente.seniat.gob.ve/BuscaRif/BuscaRif.jsp?p_rif="
 	);
 
 	protected $atrURL_CNE = array (
-		0 => "http://www.cne.gov.ve/web/registro_electoral/ce.php?nacionalidad=" , 
-		1 => "&cedula=" 
+		0 => "http://www.cne.gob.ve/web/registro_electoral/ce.php?nacionalidad=",
+		1 => "&cedula="
 	);
 
 
 	/**
 	 * Permite consultar cualquier pagina mediante curl
-	 * @param string $psTipo, string que indica la nacionalidad o tipo de documento (V, E, J, P, G, C)
-	 * @param string $piIdentidad, integer que indica el numero de documento (maximo 8 caracteres)
-	 * @param string $piDigito, integer que indica el numero del digito verificador
+	 * @param string $psTipo, indica la nacionalidad o tipo de documento (V, E, J, P, G, C)
+	 * @param string $piIdentidad, indica el numero de documento (máximo 8 caracteres)
+	 * @param string $piDigito, indica el numero del dígito verificador
 	 */
-	function __construct( $psTipo , $piIdentidad , $piDigito = '' ) {
-		$this->atrTipo = strtoupper( $psTipo ) ; //tipo de documento V, E, J, P, G, C
-		$this->atrIdentidad = $piIdentidad ; //documento de identidad
-		$this->atrDigito = $piDigito ;
-		$this->atrRif = $this->setRIF() ;
+	//función __construct(str $psTipo, int $piIdentidad, $piDigito = '') {
+	function __construct($psTipo, $piIdentidad, $piDigito = '')
+	{
+		$this->atrTipo = strtoupper($psTipo); //tipo de documento V, E, J, P, G, C
+		$this->atrIdentidad = $piIdentidad; //documento de identidad
+		$this->atrDigito = $piDigito;
+		$this->atrRif = $this->setRIF();
 	} //cierre del constructor
 
 
-	/**	 
+	/**
 	* Permite consumir e interpretar la información del resultado del curl
 	 * para solo extraer los datos necesarios de cualquier pagina
-	 * @param parametro string $psUrl url al cual desea consultar
-	 * @return varialbe string $vsResultado, HTML del resultado consultado en cadena
+	 * @param parámetro string $psUrl url al cual desea consultar
+	 * @return variable string $vsResultado, HTML del resultado consultado en cadena
 	 */
-	public static function getUrl( $psUrl ) {
+	public static function getUrl($psUrl)
+	{
 		$ch = curl_init(); //Inicia sesión cURL
-		curl_setopt( $ch, CURLOPT_URL , $psUrl ); //captura el valor obtenido de la url
-		curl_setopt( $ch , CURLOPT_TIMEOUT , 30 ); //máximo de segundos permitido para ejectuar funciones cURL 
-		curl_setopt( $ch , CURLOPT_RETURNTRANSFER , true ); //devuelve el resultado de la transferencia como string en lugar de mostrarlo directamente. 
-		//curl_setopt( $ch , CURLOPT_HEADER , FALSE); //true para incluir el header en el output
-		curl_setopt( $ch , CURLOPT_FOLLOWLOCATION , true );
-		//curl_setopt( $ch , CURLOPT_RETURNTRANSFER , 1 );
-		$vsResultado = curl_exec ( $ch );
+		curl_setopt($ch, CURLOPT_URL, $psUrl); //captura el valor obtenido de la url
+		curl_setopt($ch, CURLOPT_TIMEOUT, 30); //máximo de segundos permitido para ejecutar funciones cURL
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); //devuelve el resultado de la transferencia como string en lugar de mostrarlo directamente.
+		//curl_setopt($ch, CURLOPT_HEADER, FALSE); //true para incluir el header en el output
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		//curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		$vsResultado = curl_exec ($ch);
 		/*
-		if ( curl_exec( $ch ) === false )
-			echo 'Curl error: ' . curl_error( $ch );
-		else 
-			$resultado = curl_exec( $ch );
+		if (curl_exec($ch) === false)
+			echo 'Curl error: ' . curl_error($ch);
+		else
+			$resultado = curl_exec($ch);
 		*/
-		curl_close( $ch );
+		curl_close($ch);
 		return $vsResultado;
 	} //cierre de la función
 
 
 	/**
-	 * Permite limpiar los valores del renorno del carro (\n \r \t) 
+	 * Permite limpiar los valores del retorno del carro (\n \r \t)
 	 * @param string $psValor Valor que queremos limpiar de caracteres no permitidos
-	 * @return string Te devuelve los mismo valores pero sin los valores del renorno del carro
+	 * @return string Te devuelve los mismo valores pero sin los valores del retorno del carro
 	 */
-	public static function getLimpiarCampo( $psValor ) {
-		$rempl = array( '\n' , '\t' );
-		$r = trim( str_replace( $rempl , ' ' , $psValor ) );
-		$vsLimpio = str_replace( "\r" , "" , str_replace( "\n" , "" , str_replace( "\t" , "" , $r ) ) );
+	public static function getLimpiarCampo($psValor)
+	{
+		$rempl = array('\n', '\t');
+		$r = trim(str_replace($rempl, ' ', $psValor));
+		$vsLimpio = str_replace("\r", "", str_replace("\n", "", str_replace("\t", "", $r)));
 
 		return $vsLimpio;
 	} //cierre de la función
 
 
 	/**
-	 * Ordena e identifica los nombres y apellidos utilizando palabras pregurdadas del leguaje
-	 * natural en castellano para identificar cuando forman parte del primer o segundo nombre
-	 * y/o primer o segundo apellido.
+	 * Ordena e identifica los nombres y apellidos utilizando palabras pre-guardadas
+	 * del lenguaje natural en castellano para identificar cuando forman parte del
+	 * primer o segundo nombre y/o primer o segundo apellido.
 	 * @param string $psNombres, Cadena obtenida de la consulta con los nombres y apellidos
 	 * @return array $arrDatos, Te devuelve los mismo valores ordenados en cada lugar
+	 * @return bool $psSeparado, Indica si separa los 2 nombres y los 2 apellidos
 	 */
-	function getNombreApellido( $psNombres = "" ) {
-		if ( $psNombres != "") {
-			$arrDatos = explode( " " , self::getLimpiarCampo( $psNombres ) );
-			$arrListo = array() ;
-			$viElemtos = count( $arrDatos );
+	function getNombreApellido($psNombres = "", $psSeparado = true)
+	{
+		if ($psNombres != "") {
+			$arrDatos = explode(" ", self::getLimpiarCampo($psNombres));
+			$arrListo = array();
+			$viElemtos = count($arrDatos);
 
-			$vsParte = "DEL" || "DE" || "LOS" || "LAS" || "LA" ;
+			$vsParte = "DEL" || "DE" || "LOS" || "LAS" || "LA";
 			$vsNo = " " || "";
-			
+
 			$viCont = 1;
 			//$viCont2 = 0;
 			$arrCorrecto = array();
 			/*
-			for ($viCont = 0 ; $viCont < $viElemtos ; $viCont++) { 
-				if ( $arrDatos[$viCont] == " " ) {
+			for ($viCont = 0; $viCont < $viElemtos; $viCont++) {
+				if ($arrDatos[$viCont] == " ") {
 					$arrOtro[$viCont2] = " o ";
 					//echo $viCont2;
 					$viCont2 ++;
 				}
-				elseif ( $arrDatos[$viCont] == $vsParte ) {
+				elseif ($arrDatos[$viCont] == $vsParte) {
 					$arrOtro[$viCont2] = $arrDatos[$viCont];
 					//echo $viCont2;
 					//$viCont2 ++;
@@ -174,167 +183,219 @@ class busca_VZLA {
 			*/
 
 			/*
-			$arrCorrecto[0] = $arrDatos[0]; //el nombre siempore es la primera posicion
-			$primer_nombre = $arrCorrecto[0]; //el nombre siempore es la primera posicion
+			$arrCorrecto[0] = $arrDatos[0]; //el nombre siempre es la primera posición
+			$primer_nombre = $arrCorrecto[0]; //el nombre siempre es la primera posición
 			foreach ($arrDatos as $key => $value) {
-				if ( $value ==  $vsNo ){
-					if ( $arrCorrecto[$viCont] == $arrCorrecto[$viCont-1] ){
+				if ($value ==  $vsNo){
+					if ($arrCorrecto[$viCont] == $arrCorrecto[$viCont-1]){
 						$viCont++;
 					}
 				}
-				elseif ( $value ==  $vsParte ){
+				elseif ($value ==  $vsParte){
 					$viCont++;
-					$arrCorrecto[$viCont] .= $value; 
+					$arrCorrecto[$viCont] .= $value;
 				}
 				else {
-					$arrCorrecto[$viCont] .= $value; 
+					$arrCorrecto[$viCont] .= $value;
 				}
 				echo "<hr>";
 			}
 			var_dump($arrCorrecto);
 			*/
-			//var_dump( $viElemtos );
-			//var_dump( $psNombres );
-			//var_dump( $arrDatos );
+			//var_dump($viElemtos);
+			//var_dump($psNombres);
 
-
-
-			//identifica y evalua el lenguaje natural en dichas posiciones para que se coloquen
-			//en el orden correcto, de lo contrario un nombre como MARIA DE LOS ANGELES ocuparia
+			//identifica y evalúa el lenguaje natural en dichas posiciones para que se coloquen
+			//en el orden correcto, de lo contrario un nombre como MARIA DE LOS ANGELES ocuparía
 			//como apellido LOS ANGELES
 
-
-			//ubica la segunda posicion
-			if( $arrDatos[1] == "DEL" || $arrDatos[1] == "DE" ) {
-				if ( $arrDatos[2] == "LOS" || $arrDatos[2] == "LAS" ) {
-					$lsSegundo_nombre = $arrDatos[1] . " " . $arrDatos[2] . " " . $arrDatos[3] ;
-					//$lsSegundo_nombre = $arrDatos ;
-					$lsPri_Apellido = $arrDatos[4] ;
-					$lsSeg_Apellido = $arrDatos[5] ;		
+			//ubica la segunda posición
+			if($arrDatos[1] == "DEL" || $arrDatos[1] == "DE") {
+				if ($arrDatos[2] == "LOS" || $arrDatos[2] == "LAS") {
+					$lsSegundo_nombre = $arrDatos[1] . " " . $arrDatos[2] . " " . $arrDatos[3];
+					//$lsSegundo_nombre = $arrDatos;
+					$lsPri_Apellido = $arrDatos[4];
+					$lsSeg_Apellido = $arrDatos[5];
 				}
 				else {
-					$lsSegundo_nombre = $arrDatos[1] . " " . $arrDatos[2] ;
-					$lsPri_Apellido = $arrDatos[3] ;
-					$lsSeg_Apellido = $arrDatos[4] ;
+					$lsSegundo_nombre = $arrDatos[1] . " " . $arrDatos[2];
+					$lsPri_Apellido = $arrDatos[3];
+					$lsSeg_Apellido = $arrDatos[4];
 				}
 			}
 
 			//no tiene segundo nombre
-			elseif ( $arrDatos[1] == "" || $arrDatos[1] == " " ) {
-				$lsSegundo_nombre = NULL ;
-				$lsPri_Apellido = $arrDatos[2] ;
+			elseif ($arrDatos[1] == "" || $arrDatos[1] == " ") {
+				$lsSegundo_nombre = NULL;
+				$lsPri_Apellido = $arrDatos[2];
 				//esta casada
-				if( $arrDatos[3] == "DEL" || $arrDatos[3] == "DE" || $arrDatos[3] == "" || $arrDatos[3] == " ") {
-					$lsSeg_Apellido = $arrDatos[3] . " " . $arrDatos[4] ;
+				if($arrDatos[3] == "DEL" || $arrDatos[3] == "DE" || $arrDatos[3] == "" || $arrDatos[3] == " ") {
+					//tiene apellido compuesto
+					$lsSeg_Apellido = $arrDatos[3] . " " . $arrDatos[4];
 				}
-				elseif( $arrDatos[4] == "" || $arrDatos[4] == " " ) {
-					$lsSeg_Apellido = $arrDatos[4] . " " . $arrDatos[5] ;
+				elseif($arrDatos[4] == "" || $arrDatos[4] == " ") {
+					$lsSeg_Apellido = $arrDatos[4] . " " . $arrDatos[5];
 				}
 				else {
-					if ( empty ( $arrDatos[3] ) ) {
-						$arrDatos[3] = ""; //No tiene segundo apellido
+					if (empty ($arrDatos[3])) {
+						//No tiene segundo apellido
+						$arrDatos[3] = "";
 					}
 					$lsSeg_Apellido = $arrDatos[3];
 				}
 			}
-			//es un nombre comun
+
+			//es un nombre común
 			else {
 				$lsSegundo_nombre = $arrDatos[1];
-				$lsPri_Apellido = $arrDatos[2] ;
-				if ( empty ( $arrDatos[3] ) ) {
-					$arrDatos[3] = NULL; //No tiene segundo apellido
+				$lsPri_Apellido = $arrDatos[2];
+
+				if (empty ($arrDatos[3])) {
+					//No tiene segundo apellido
+					$arrDatos[3] = NULL;
 				}
-				$lsSeg_Apellido = $arrDatos[3] ;
+				elseif ($arrDatos[3] == "DEL" || $arrDatos[3] == "DE") {
+					//tiene apellido compuesto
+					$lsSeg_Apellido = $arrDatos[3] . " " . $arrDatos[4];
+				}
+				else {
+					//el apellido es normal
+					$lsSeg_Apellido = $arrDatos[3];
+				}
 			}
 
-			$arrListo = array( 
-				0 => strtolower( $arrDatos[0] ) , 'primer_nombre' => strtolower( $arrDatos[0] ) , 
+			$arrListo = array(
+				0 => strtolower($arrDatos[0]),
+				'primer_nombre' => strtolower($arrDatos[0]),
 
-				1 => strtolower( $lsSegundo_nombre ) , 'segundo_nombre' => strtolower( $lsSegundo_nombre ) ,
+				1 => strtolower($lsSegundo_nombre),
+				'segundo_nombre' => strtolower($lsSegundo_nombre),
 
-				2 => strtolower( $lsPri_Apellido ) , 'primer_apellido' => strtolower( $lsPri_Apellido ) , 
+				2 => strtolower($lsPri_Apellido),
+				'primer_apellido' => strtolower($lsPri_Apellido),
 
-				3 => strtolower( $lsSeg_Apellido ) , 'segundo_apellido' => strtolower( $lsSeg_Apellido ) ,
+				3 => strtolower($lsSeg_Apellido),
+				'segundo_apellido' => strtolower($lsSeg_Apellido),
 
-				4 => 0 , 'error' => 0
-				);
+				4 => strtolower(
+					$arrDatos[0]. ' ' . $lsSegundo_nombre . ' ' . $lsPri_Apellido . ' ' . $lsSeg_Apellido
+				),
+				'razon_social' => strtolower(
+					$arrDatos[0]. ' ' . $lsSegundo_nombre . ' ' . $lsPri_Apellido . ' ' . $lsSeg_Apellido
+				),
+
+				5 => 0,
+				'error' => 0
+			);
 		}
 		else {
-			$arrListo = array( 
-				0 => null , 'primer_nombre' => null , 
+			$arrListo = array(
+				0 => null,
+				'primer_nombre' => null,
 
-				1 => null , 'segundo_nombre' => null , 
+				1 => null,
+				'segundo_nombre' => null,
 
-				2 => null , 'primer_apellido' => null , 
+				2 => null,
+				'primer_apellido' => null,
 
-				3 => null , 'segundo_apellido' => null , 
+				3 => null,
+				'segundo_apellido' => null,
 
-				4 => null , 'error' => 0
-				);
+				4 => null,
+				'razon_social' => null,
+
+				5 => 0,
+				'error' => 0
+			);
 		}
-
 		return $arrListo;
 	} //cierre de la función
 
 
 	/**
 	 * Consulta los datos de la Persona que este registrada en el CNE
-	 * @param string $psNac Nacionalidad de la persona, toma atributo del contructor atrTipo
-	 * @param integer $piIdentidad Cedula de la persona votante, toma atributo del contructor atrIdentidad
+	 * @param string $psNac Nacionalidad de la persona, toma atributo del constructor atrTipo
+	 * @param integer $piIdentidad Cédula de la persona votante, toma atributo del constructor atrIdentidad
 	 * @return string Json del resultado consultado de los datos asociados a la persona
 	 */
-	public function flBuscarCNE( $psNac = "" , $piIdentidad = "" ) {
-		$psNac = strtoupper( $psNac );
-		if ( $psNac == "" ) {
-			$psNac = strtoupper( $this->atrTipo );
+	public function flBuscarCNE($psNac = "", $piIdentidad = "")
+	{
+		$psNac = strtoupper($psNac);
+		if ($psNac == "") {
+			$psNac = strtoupper($this->atrTipo);
 			$piIdentidad = $this->atrIdentidad;
 		}
 
-		//es sensible a mayusculas y minusculas en la nacionalidad, debe ser mayuscula
+		//es sensible a mayúsculas y minúsculas en la nacionalidad, debe ser mayúscula
 		//$url = "http://www.cne.gov.ve/web/registro_electoral/ce.php?nacionalidad=" . $psNac . "&cedula=" . $piIdentidad;
 		$url = $this->atrURL_CNE[0] . $psNac . $this->atrURL_CNE[1] . $piIdentidad;
-
-		$resource = self::getUrl( $url );
-		$text = strip_tags( $resource );
-		$findme = 'SERVICIO ELECTORAL'; //busca la cadena en el texto obtenido, en caso de encontrar
-		$pos = strpos( $text , $findme );
+		$resource = self::getUrl($url);
+		$text = strip_tags($resource);
+		$findme = 'REGISTRO ELECTORAL'; //busca la cadena en el texto obtenido, en caso de encontrar
+		//$findme = 'SERVICIO ELECTORAL'; //busca la cadena en el texto obtenido, en caso de encontrar
+		$pos = strpos($text, $findme);
 
 		$findme2 = 'ADVERTENCIA'; //busca la cadena en el texto obtenido, en caso de no encontrar
-		$pos2 = strpos( $text , $findme2 );
-
-		if ( $pos == TRUE AND $pos2 == FALSE ) {
-			// Codigo buscar votante
-			$rempl = array('Cédula:' , 'Nombre:' , 'Estado:' , 
-				'Municipio:' , 'Parroquia:' , 'Centro:' , 'Dirección:' , 
-				'SERVICIO ELECTORAL', 'Usted' , "cargo de" , "de la mesa" , "Si desea solicitar" , 'Imprimir' , "");
-			$r = trim( str_replace( $rempl , '|' , self::getLimpiarCampo( $text ) ) );
-			$arrRecurso = explode("|" , $r);
-
-			$arrDatos = self::getNombreApellido( $arrRecurso[2] );
-
-			$arrConsulta = array( 
-				'error' => 0 , 
-				'mensaje' => 'Consulta de Datos CNE Satisfactoria' ,
-				'estado' => substr( $arrRecurso[3] , 5 ) , 
-				'municipio' => substr($arrRecurso[4] , 4 ) , 
-				'parroquia' => substr( $arrRecurso[5] , 4 ) , 
-				"centro" => $arrRecurso[6] , 
-				"direccion" => self::getLimpiarCampo( $arrRecurso[7] ) , 
-				"servicio" => self::getLimpiarCampo( $arrRecurso[9] ) 
-				//"cargo" => self::getLimpiarCampo( $arrRecurso[11] ) ,
-				//"mesa" => self::getLimpiarCampo( $arrRecurso[12] ) 
+		$pos2 = strpos($text, $findme2);
+		if ($pos == TRUE AND $pos2 == FALSE) {
+			// Código buscar votante
+			$rempl = array('Cédula:', 'Nombre:', 'Estado:', 'Municipio:',
+				'Parroquia:', 'Centro:', 'Dirección:', 'SERVICIO ELECTORAL',
+				'Cerrar', 'Usted', "cargo de", "de la mesa", "Si desea solicitar",
+				'Imprimir', 'ESTATUS', 'REGISTRO ELECTORAL - ', 'Planilla',
+				'Consulta de Datos', 'DATOS PERSONALES'
 			);
-		}
+			$r = trim(str_replace($rempl, '|', self::getLimpiarCampo($text)));
+			$arrRecurso = explode("|", $r);
+			//var_dump($arrRecurso);
 
-		else {
-			$arrDatos = self::getNombreApellido() ;
-			if ( $psNac == "V" OR $psNac == "E" ) {
-				$arrConsulta = array( 
-					'mensaje' => 'Error, no está registrado en el CNE o no hay conexion'
+			if ($arrRecurso[5] == "Esta cédula de identidad no se encuentra inscrito en el Registro Electoral. ")
+				$arrDatos = self::getNombreApellido('');
+			else
+				$arrDatos = self::getNombreApellido($arrRecurso[4]);
+			//var_dump($arrRecurso);
+
+			//MEJORAR CONDICIONAL
+			if ($arrRecurso[3] == "") {
+				$arrConsulta = array(
+					'error' => 0,
+					'mensaje' => $arrRecurso[5],
+					'estado' => "",
+					'municipio' => "",
+					'parroquia' => "",
+					"centro" => "",
+					"direccion" => ""
+					//"servicio" => self::getLimpiarCampo($arrRecurso[9])
+					//"cargo" => self::getLimpiarCampo($arrRecurso[11]),
+					//"mesa" => self::getLimpiarCampo($arrRecurso[12])
 				);
 			}
 			else {
-				$arrConsulta = array( 
+				$arrConsulta = array(
+					'error' => 0,
+					'mensaje' => 'Consulta de Datos CNE Satisfactoria',
+					'estado' => substr($arrRecurso[5], 5),
+					'municipio' => substr($arrRecurso[6], 4),
+					'parroquia' => substr($arrRecurso[7], 4),
+					"centro" => $arrRecurso[8],
+					"direccion" => self::getLimpiarCampo($arrRecurso[9])
+					//"servicio" => self::getLimpiarCampo($arrRecurso[9])
+					//"cargo" => self::getLimpiarCampo($arrRecurso[11]),
+					//"mesa" => self::getLimpiarCampo($arrRecurso[12])
+				);
+			}
+		}
+
+		else {
+			$arrDatos = self::getNombreApellido();
+			if ($psNac == "V" OR $psNac == "E") {
+				$arrConsulta = array(
+					'mensaje' => 'Error, no está registrado en el CNE o no hay conexión'
+				);
+			}
+			else {
+				$arrConsulta = array(
 					'mensaje' => 'Error, el documento de identidad no es el correcto'
 				);
 			}
@@ -342,93 +403,95 @@ class busca_VZLA {
 			//El número de cédula ingresado no corresponde a un elector
 			//Los Datos NO son Correctos
 		}
-		return array_merge(  $arrDatos , $arrConsulta );
+		return array_merge( $arrDatos, $arrConsulta);
 	} //cierre de la función
 
 
 	/**
-	 * Consulta los datos de la Persona que tenga pension en el IVSS
+	 * Consulta los datos de la Persona que tenga pensión en el IVSS
 	 * @param string $nac Nacionalidad de la persona
-	 * @param integer $ci Cedula de la persona
+	 * @param integer $ci Cédula de la persona
 	 * @return string Json del resultado consultado de los datos asociados a la persona
 	 */
-	public function flBuscarIVSS( $psNac = "" , $piIdentidad = "" ) {
-		$psNac = strtoupper( $psNac );
-		if ( $psNac == "" ) {
-			$psNac = strtoupper( $this->atrTipo );
+	public function flBuscarIVSS($psNac = "", $piIdentidad = "")
+	{
+		$psNac = strtoupper($psNac);
+		if ($psNac == "") {
+			$psNac = strtoupper($this->atrTipo);
 			$piIdentidad = $this->atrIdentidad;
 		}
-		//es sensible a mayusculas y minusculas en la nacionalidad, debe ser mayuscula
+		//es sensible a mayúsculas y minúsculas en la nacionalidad, debe ser mayúscula
 		//$url = "http://www.ivss.gob.ve:28080/Pensionado/PensionadoCTRL?boton=Consultar&nacionalidad=$psNac&cedula=$piIdentidad";
 		//$url = "http://www.ivss.gob.ve:28080/Pensionado/PensionadoCTRL?boton=Consultar&nacionalidad=$nac&cedula=$ci&d1=25&m1=03&y1=1952";
 		$url = $this->atrURL_IVSS_Pensiones[0] . $psNac . $this->atrURL_IVSS_Pensiones[0] . $piIdentidad;
-		
-		$resource = self::getUrl( $url ); //obtiene todo el contenido de la pagina web
+
+		$resource = self::getUrl($url); //obtiene todo el contenido de la pagina web
 		$text = strip_tags($resource); //elimina las etiquetas html y deja solo texto
 		$findme = 'Consulta de Pensiones en Linea'; // Identifica que si es población Votante
-		$pos = strpos($text , $findme);
+		$pos = strpos($text, $findme);
 
 		$findme2 = 'no tiene'; // Identifica que si es población Votante
-		$pos2 = strpos($text , $findme2);
+		$pos2 = strpos($text, $findme2);
 
 		if ($pos == TRUE AND $pos2 == FALSE) {
-			//Busca estas palabras en el texto ( se usa &acute; en vez de tildes porque asi lo trae la pagina)
-			$rempl = array('Tipo de Pensi&oacute;n:' , 'Via:', 'C&eacute;dula:' , 'Apellido y nombre:' ,
-				'Entidad Financiera:' , 'Estatus de la Pensi&oacute;n:' , 'Tipo de Pensi&oacute;n:' , 
-				'Fecha de Inactivaci&oacute;n:' , 'Monto de Pensi&oacute;n:' , 'Monto de Ajuste:' , 
-				'Monto de Homologaci&oacute;n:' , 'Monto de Deuda:' , 'Total Abonado:', 
-				'Monto de Adeudado:' , 'Total Pagos:' , 'Total a Pagar este mes:' );
-			$r = trim( str_replace( $rempl , '|' , self::getLimpiarCampo( $text ) ) );
-			$arrRecurso = explode( "|" , $r );
-			$arrDatos = self::getNombreApellido( $arrRecurso[4] );
+			//Busca estas palabras en el texto (se usa &acute; en vez de tildes porque asi lo trae la pagina)
+			$rempl = array('Tipo de Pensi&oacute;n:', 'Via:', 'C&eacute;dula:', 'Apellido y nombre:',
+				'Entidad Financiera:', 'Estatus de la Pensi&oacute;n:', 'Tipo de Pensi&oacute;n:',
+				'Fecha de Inactivaci&oacute;n:', 'Monto de Pensi&oacute;n:', 'Monto de Ajuste:',
+				'Monto de Homologaci&oacute;n:', 'Monto de Deuda:', 'Total Abonado:',
+				'Monto de Adeudado:', 'Total Pagos:', 'Total a Pagar este mes:');
+			$r = trim(str_replace($rempl, '|', self::getLimpiarCampo($text)));
+			$arrRecurso = explode("|", $r);
+			$arrDatos = self::getNombreApellido($arrRecurso[4]);
 
 			//crea el arreglo
-			$arrConsulta = array( 
-				'mensaje' => 'Consulta de Datos IVSS Satisfactoria' ,
-				'error' => 0 , 
-				'nacionalidad' => $psNac , 
-				'cedula' => $piIdentidad , 
-				'pensionado' => 'SI' , 
-				'tipo_pension' => self::getLimpiarCampo( $arrRecurso[1] ) , 
-				'via' => self::getLimpiarCampo( $arrRecurso[2] ) , 
-				'entidad_financiera' => self::getLimpiarCampo( $arrRecurso[5] ) , 
-				'estatus' => self::getLimpiarCampo( $arrRecurso[6] ) , 
-				'fecha_inactivacion' => self::getLimpiarCampo( $arrRecurso[7] ) , 
-				'monto_pension' => self::getLimpiarCampo( $arrRecurso[8] ) , 
-				'monto_ajuste' => self::getLimpiarCampo( $arrRecurso[9] ) , 
-				'monto_homologacion' => self::getLimpiarCampo( $arrRecurso[10] ) , 
-				'monto_deuda' => self::getLimpiarCampo( $arrRecurso[11] ) , 
-				'total_abonado' => self::getLimpiarCampo( $arrRecurso[12] ) , 
-				'monto_adeudado' => self::getLimpiarCampo( $arrRecurso[13] ) , 
-				'total_pagos' => self::getLimpiarCampo( $arrRecurso[14] ) , 
-				'total_mes' => self::getLimpiarCampo( $arrRecurso[15]) 
+			$arrConsulta = array(
+				'mensaje' => 'Consulta de Datos IVSS Satisfactoria',
+				'error' => 0,
+				'nacionalidad' => $psNac,
+				'cedula' => $piIdentidad,
+				'pensionado' => 'SI',
+				'tipo_pension' => self::getLimpiarCampo($arrRecurso[1]),
+				'via' => self::getLimpiarCampo($arrRecurso[2]),
+				'entidad_financiera' => self::getLimpiarCampo($arrRecurso[5]),
+				'estatus' => self::getLimpiarCampo($arrRecurso[6]),
+				'fecha_inactivacion' => self::getLimpiarCampo($arrRecurso[7]),
+				'monto_pension' => self::getLimpiarCampo($arrRecurso[8]),
+				'monto_ajuste' => self::getLimpiarCampo($arrRecurso[9]),
+				'monto_homologacion' => self::getLimpiarCampo($arrRecurso[10]),
+				'monto_deuda' => self::getLimpiarCampo($arrRecurso[11]),
+				'total_abonado' => self::getLimpiarCampo($arrRecurso[12]),
+				'monto_adeudado' => self::getLimpiarCampo($arrRecurso[13]),
+				'total_pagos' => self::getLimpiarCampo($arrRecurso[14]),
+				'total_mes' => self::getLimpiarCampo($arrRecurso[15])
 			);
 		}
 
 		else {
-			$arrDatos = self::getNombreApellido() ;
+			$arrDatos = self::getNombreApellido();
 
-			$arrConsulta = array( 
-				'mensaje' => 'EL CIUDADANO no tiene Pension Asociada, IVSS' ,
-				'nacionalidad' => $psNac , 
-				'cedula' => $piIdentidad , 
-				'nombres' => NULL , 
-				'apellidos' => NULL , 
-				'pensionado' => 'NO' 
+			$arrConsulta = array(
+				'mensaje' => 'EL CIUDADANO no tiene Pension Asociada, IVSS',
+				'nacionalidad' => $psNac,
+				'cedula' => $piIdentidad,
+				'nombres' => NULL,
+				'apellidos' => NULL,
+				'pensionado' => 'NO'
 			);
 			$arrConsulta["error"] = $arrDatos["error"] + 1;
 		}
-		return array_merge( $arrDatos , $arrConsulta );
+		return array_merge($arrDatos, $arrConsulta);
 	} //cierre de la función
 
 
 	/**
 	 * Consulta los datos de la Persona que este registrada en el SENIAT
-	 * @param string $pcRIF del contribuyente, toma atributo del contructor atrRif
+	 * @param string $pcRIF del contribuyente, toma atributo del constructor atrRif
 	 * @return string Json del resultado consultado de los datos asociados a la persona
 	 */
-	public function flBuscarSENAT( $psRIF = "" ) {
-		if ( $psRIF == "" ) {
+	public function flBuscarSENAT($psRIF = "")
+	{
+		if ($psRIF == "") {
 			$psRIF = $this->atrRif;
 		}
 
@@ -441,55 +504,55 @@ class busca_VZLA {
 			450:formato de rif invalido
 			452:rif no existe
 		*/
-		
-		//es indiferente si se usa mayusculas y minusculas en la nacionalidad o tipo de documento
+
+		//es indiferente si se usa mayúsculas y minúsculas en la nacionalidad o tipo de documento
 		//$url_seniat = 'http://contribuyente.seniat.gob.ve/getContribuyente/getrif?rif=' . $psRIF;
 		$url_seniat = $this->atrURL_SENIAT[0] . $psRIF;
 
-		$resultado = @file_get_contents( $url_seniat );
+		$resultado = @file_get_contents($url_seniat);
 
-		if ( $resultado ) {
+		if ($resultado) {
 			try {
-				if ( substr( $resultado , 0 , 1 ) != '<' )
-					throw new Exception( $resultado );
-				$xml = simplexml_load_string( $resultado );
-				if ( !is_bool( $xml ) ) {
+				if (substr($resultado, 0, 1) != '<')
+					throw new Exception($resultado);
+				$xml = simplexml_load_string($resultado);
+				if (!is_bool($xml)) {
 					$arrRecurso = $xml->children('rif');
 
 					$arrConsulta = array();
 					$arrConsulta['error'] = 0;
 
-					foreach ( $arrRecurso as $indice => $node ) {
-						$index = strtolower( $node->getName() );
+					foreach ($arrRecurso as $indice => $node) {
+						$index = strtolower($node->getName());
 						$arrConsulta[$index] = (string) $node;
 					}
 					$arrConsulta['mensaje'] = 'Consulta satisfactoria SENIAT';
-					
-					//almacena en la posicion que crea conveniente los datos de nombre y apellido
-					$arrDatos = self::getNombreApellido( $arrConsulta["nombre"] ) ;
+
+					//almacena en la posición que crea conveniente los datos de nombre y apellido
+					$arrDatos = self::getNombreApellido($arrConsulta["nombre"]);
 				}
-			} 
-			catch ( Exception $e ) {
-				$resultado = explode( ' ' , @$resultado , 2 );
+			}
+			catch (Exception $e) {
+				$resultado = explode(' ', @$resultado, 2);
 				$arrConsulta['error'] = (int) $resultado[0];
 			}
 		}
 		else {
-			$arrConsulta = array( 
-				"agenteretencioniva" => NULL ,
-				"contribuyenteiva" => NULL ,
+			$arrConsulta = array(
+				"agenteretencioniva" => NULL,
+				"contribuyenteiva" => NULL,
 				"tasa" => NULL
 			);
 			$arrDatos = self::getNombreApellido();
 
-			$psTipo = substr( $psRIF , 0 , 1 ); //tipo de documento (V, E , J , G)
-			$piDocumento = substr( substr( $psRIF , 1 ) , 0 , -1 );
+			$psTipo = substr($psRIF, 0, 1); //tipo de documento (V, E, J, G)
+			$piDocumento = substr(substr($psRIF, 1), 0, -1);
 
-			$piDigito_Actual = substr( $psRIF , -1 );
-			$piDigito_Calculado = self::flCalcularDigito( $psTipo , $piDocumento );
+			$piDigito_Actual = substr($psRIF, -1);
+			$piDigito_Calculado = self::flCalcularDigito($psTipo, $piDocumento);
 
-			if ( $piDigito_Actual ==  $piDigito_Calculado ) {
-				$arrConsulta['mensaje'] = '452 El Contribuyente no está registrado en el SENIAT o no hay conexion';
+			if ($piDigito_Actual ==  $piDigito_Calculado) {
+				$arrConsulta['mensaje'] = '452 El Contribuyente no está registrado en el SENIAT o no hay conexión';
 			}
 			else {
 				$arrConsulta['mensaje'] = '450 El Rif del Contribuyente No es válido, SENIAT ';
@@ -497,61 +560,65 @@ class busca_VZLA {
 			$arrConsulta["error"] = $arrDatos["error"] + 1;
 		}
 
-		return array_merge( $arrDatos , $arrConsulta );
+		return array_merge($arrDatos, $arrConsulta);
 	} //cierre de la función
 
 
 	/**
-	 * Asigna el Rif al constructor, si es enviado completo lo valida, si falta el ultimo digito lo agrega
+	 * Asigna el Rif al constructor, si es enviado completo lo valida, si falta el ultimo dígito lo agrega
 	 * @return string o bool, RIF completo o False si no coincide
 	 */
-	private function setRIF() {
-		if ( $this->atrDigito == "" )
-			$this->atrDigito = $this->flCalcularDigito( $this->atrTipo , $this->atrIdentidad );
+	private function setRIF()
+	{
+		if ($this->atrDigito == "")
+			$this->atrDigito = $this->flCalcularDigito($this->atrTipo, $this->atrIdentidad);
 		else {
-			$lsRIF = strtoupper( $this->atrTipo ) . $this->atrIdentidad . $this->atrDigito;
-			if ( $this->flValidarRif( $lsRIF ) )
+			$lsRIF = strtoupper($this->atrTipo) . $this->atrIdentidad . $this->atrDigito;
+			if ($this->flValidarRif($lsRIF))
 				return $lsRIF;
 			else
 				return false;
 		}
 
-		$lsRIF = strtoupper( $this->atrTipo ) . $this->atrIdentidad . $this->atrDigito;
+		$lsRIF = strtoupper($this->atrTipo) . $this->atrIdentidad . $this->atrDigito;
 		return $lsRIF;
 	} //cierre de la función
 
 
 	/**
-	 * Calcula el ultimo digito del rif a partir de solo la cedula
+	 * Calcula el ultimo dígito del rif a partir de solo la cédula
 	 * Basado en el método módulo 11 para el cálculo del dígito verificador
      * y aplicando las modificaciones propias ejecutadas por el seniat
      * @link http://es.wikipedia.org/wiki/C%C3%B3digo_de_control#C.C3.A1lculo_del_d.C3.ADgito_verificador
-	 * @param string $psTipo Nacionalidad de la persona, toma atributo del contructor atrTipo
-	 * @param integer $piIdentidad Cedula de la persona contribuyente, toma atributo del contructor atrIdentidad
-	 * @return integer $digito_final Ultimo digito verificador
+	 * @param string $psTipo Nacionalidad de la persona, toma atributo del constructor atrTipo
+	 * @param integer $piIdentidad Cédula de la persona contribuyente, toma atributo del constructor atrIdentidad
+	 * @return integer $digito_final Ultimo dígito verificador
 	 */
-	public function flCalcularDigito( $psTipo = "" , $piDocumento = "" ) {
-		$psTipo = strtoupper( $psTipo );
-		//si no se le paso un parametro asigna uno del construnctor
-		if ( $psTipo == "" ) {
-			$psTipo = strtoupper( $this->atrTipo );
+	public function flCalcularDigito($psTipo = "", $piDocumento = "")
+	{
+		$psTipo = strtoupper($psTipo);
+		//si no se le paso un parámetro asigna uno del constructor
+		if ($psTipo == "") {
+			$psTipo = strtoupper($this->atrTipo);
 			$piDocumento = $this->atrIdentidad;
 		}
 
-		$total_digitos_ci = strlen( $piDocumento );
-		$viLongitud = strlen( $piDocumento ); //cuenta el tamaño del documento de indentidad
+		$total_digitos_ci = strlen($piDocumento);
+		$viLongitud = strlen($piDocumento); //cuenta el tamaño del documento de identidad
 
-		// si el tamaño de la cedula es mayor a 9 caracteres o menor a 3
-		if( $viLongitud > 9 || $viLongitud <= 3) 
+		// si el tamaño de la cédula es mayor a 9 caracteres o menor a 3
+		if($viLongitud > 9 || $viLongitud <= 3) {
 			return false;
+		}
 
-		if ( $viLongitud == 9 )
+		if ($viLongitud == 9) {
 			$viLongitud--;
+		}
 
-		$calc = array( 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 );
-		$arrConstantes = array( 4 , 3 , 2, 7 , 6 , 5 , 4 , 3 , 2 );
+		$calc = array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+		$arrConstantes = array(4, 3, 2, 7, 6, 5, 4, 3, 2);
 
-		switch ( $psTipo ) {
+		switch ($psTipo) {
 			case 'V':
 				$calc[0] = 1;
 				break;
@@ -568,49 +635,51 @@ class busca_VZLA {
 				$calc[0] = 5;
 				break;
 			case 'C':
-				$calc[0] = 6 ;
+				$calc[0] = 6;
 				break;
-			/* Falta agregar el digito cuando el tipo es 'C' (comunas)
+			/* Falta agregar el dígito cuando el tipo es 'C' (comunas)
 			 *
 			 * case 'C':
-			 *	$calc[0] = ??? ;
+			 *	$calc[0] = ???;
 			 *	break;
 			*/
 		}
 
 		$suma = $calc[0] * $arrConstantes[0];
-		$index = count( $arrConstantes ) - 1;
+		$index = count($arrConstantes) - 1;
 
-		for( $i = $viLongitud - 1 ; $i >= 0 ; $i-- ) {
-			$digit = $calc[$index] = intval( $piDocumento[$i] );
+		for($i = $viLongitud - 1; $i >= 0; $i--) {
+			$digit = $calc[$index] = intval($piDocumento[$i]);
 			$suma += $digit * $arrConstantes[$index--];
 		}
 
 		$digito_final = $suma % 11;
 
-		if( $digito_final > 1 )
+		if($digito_final > 1) {
 			$digito_final = 11 - $digito_final;
+		}
 		return $digito_final;
 	} //cierre de la función
 
 
 	/**
-	 * Realiza consultas tomando los datos del contructor
-	 * @param string $psRIF, Registro de Informacion Fiscal del contribuyente, toma atributo del contructor atrRif
-	 * @return bool, Si es bien validado el formato y el ultimo digito del RIF
+	 * Realiza consultas tomando los datos del constructor
+	 * @param string $psRIF, Registro de Información Fiscal del contribuyente, toma atributo del constructor atrRif
+	 * @return bool, Si es bien validado el formato y el ultimo dígito del RIF
 	 */
-	function flValidarRif( $psRIF = "" ) {
-		$psRIF = strtoupper( $psRIF );
-		//si no se le paso un parametro asigna uno del construnctor
-		if ( $psRIF == "" ) {
-			$psRIF = strtoupper( $this->atrRif );
+	function flValidarRif($psRIF = "")
+	{
+		$psRIF = strtoupper($psRIF);
+		//si no se le paso un parámetro asigna uno del constructor
+		if ($psRIF == "") {
+			$psRIF = strtoupper($this->atrRif);
 		}
-		//almacena el formato de la cedula [tipo][documento][digito]
-		//$retorno = preg_match( "/^([VEJPG]{1})([0-9]{9}$)/" , $psRIF );
-		$retorno = preg_match( "/^([VEJPGC]{1})([0-9]{9}$)/" , $psRIF );
+		//almacena el formato de la cédula [tipo][documento][digito]
+		//$retorno = preg_match("/^([VEJPG]{1})([0-9]{9}$)/", $psRIF);
+		$retorno = preg_match("/^([VEJPGC]{1})([0-9]{9}$)/", $psRIF);
 
-		if ( $retorno ) {
-			$digitos = str_split( $psRIF );
+		if ($retorno) {
+			$digitos = str_split($psRIF);
 
 			$digitos[8] *= 2;
 			$digitos[7] *= 3;
@@ -623,7 +692,7 @@ class busca_VZLA {
 
 			// Determinar dígito especial según la inicial del RIF
 			// Regla introducida por el SENIAT
-			switch ( $digitos[0] ) {
+			switch ($digitos[0]) {
 				case 'V':
 					$digitoEspecial = 1;
 					break;
@@ -642,119 +711,125 @@ class busca_VZLA {
 				case 'C':
 					$digitoEspecial = 6;
 					break;
-				/* Falta agregar el digito cuando el tipo es 'C' (comunas)
+				/* Falta agregar el dígito cuando el tipo es 'C' (comunas)
 				 *
 				 * case 'C':
-				 *	$calc[0] = ??? ;
+				 *	$calc[0] = ???;
 				 *	break;
 				*/
 			}
 
-			$suma = ( array_sum( $digitos ) - $digitos[9] ) + ( $digitoEspecial * 4 );
+			$suma = (array_sum($digitos) - $digitos[9]) + ($digitoEspecial * 4);
 			$residuo = $suma % 11;
 			$resta = 11 - $residuo;
 
-			$digitoVerificador = ( $resta >= 10 ) ? 0 : $resta;
+			$digitoVerificador = ($resta >= 10) ? 0 : $resta;
 
-			if ( $digitoVerificador != $digitos[9] ) {
+			if ($digitoVerificador != $digitos[9]) {
 				$retorno = false;
 			}
 		}
-		if ( $retorno == 0 )
+		if ($retorno == 0) {
 			return false;
+		}
 		//return $retorno;
 		return true;
 	} //cierre de la función
 
 
 	/**
-	 * Realiza consultas tomando los datos del contructor
+	 * Realiza consultas tomando los datos del constructor
 	 * @return array $arrTodo, Arreglo multidimensional de cada consulta
 	 */
-	public function flBuscar() {
-		$arrConsultaCNE = $this->flBuscarCNE() ;
-		$arrConsultaIVSS = $this->flBuscarIVSS() ;
-		$arrConsultaSENIAT = $this->flBuscarSENAT() ;
+	public function flBuscar()
+	{
+		$arrConsultaCNE = $this->flBuscarCNE();
+		$arrConsultaIVSS = $this->flBuscarIVSS();
+		$arrConsultaSENIAT = $this->flBuscarSENAT();
 		$errores = $arrConsultaCNE["error"] + $arrConsultaIVSS["error"] + $arrConsultaSENIAT["error"];
-		$arrTodo = array( 
-			"error" => $errores ,
-			"CNE" => $arrConsultaCNE ,
-			"IVSS" => $arrConsultaIVSS ,
+		$arrTodo = array(
+			"error" => $errores,
+			"CNE" => $arrConsultaCNE,
+			"IVSS" => $arrConsultaIVSS,
 			"SENIAT" => $arrConsultaSENIAT
 		);
 		/*
-		$arrConsultaCNE = array( 'CNE' =>  $this->flBuscarCNE() );
-		$arrConsultaIVSS = array( 'IVSS' =>  $this->flBuscarIVSS() );
-		$arrConsultaSENIAT = array( "SENIAT" => $this->flBuscarSENAT() );
-		//$arrTodo = array_merge( $arrConsultaCNE , $arrConsultaSENIAT , $arrConsultaIVSS ); //suma o une los arreglos*/
+		$arrConsultaCNE = array('CNE' =>  $this->flBuscarCNE());
+		$arrConsultaIVSS = array('IVSS' =>  $this->flBuscarIVSS());
+		$arrConsultaSENIAT = array("SENIAT" => $this->flBuscarSENAT());
+		//$arrTodo = array_merge($arrConsultaCNE, $arrConsultaSENIAT, $arrConsultaIVSS); //suma o une los arreglos*/
 		return  $arrTodo;
-	}
-
-
-	/**
-	 * Realiza consultas en el SENIAT tomando los datos del contructor, luego retorna
-	 * los datos adicionando los nomrbes encontrados en otra bases de datos de otros
-	 * entes.
-	 * @return array $arrRetornado, Arreglo multidimensional de cada consulta
-	 */
-	public function flBuscarDatosContribuyente() {
-		$arrConsultaSENIAT = $this->flBuscarSENAT() ;
-		$arrSeniat = array( 
-			"error" => $arrConsultaSENIAT["error"] ,
-			"agenteretencioniva" => $arrConsultaSENIAT["agenteretencioniva"] ,
-			"contribuyenteiva" => $arrConsultaSENIAT["contribuyenteiva"] ,
-			"tasa" => $arrConsultaSENIAT["tasa"]
-		);
-		
-		$arrRetornado = array_merge( $this->flBuscarNombres() , $arrSeniat ); //suma o une los arreglos*/
-		return  $arrRetornado;
 	} //cierre de la función
 
 
 	/**
-	 * Realiza consultas tomando los datos del contructor y compara donde hay consultas
+	 * Realiza consultas en el SENIAT tomando los datos del constructor, luego retorna
+	 * los datos adicionando los nombres encontrados en otra bases de datos de otros
+	 * entes.
+	 * @return array $arrRetornado, Arreglo multidimensional de cada consulta
+	 */
+	public function flBuscarDatosContribuyente()
+	{
+		$arrConsultaSENIAT = $this->flBuscarSENAT();
+		$arrSeniat = array(
+			"error" => $arrConsultaSENIAT["error"],
+			"agenteretencioniva" => $arrConsultaSENIAT["agenteretencioniva"],
+			"contribuyenteiva" => $arrConsultaSENIAT["contribuyenteiva"],
+			"tasa" => $arrConsultaSENIAT["tasa"]
+		);
+
+		$arrRetornado = array_merge($this->flBuscarNombres(), $arrSeniat); //suma o une los arreglos*/
+		return  $arrRetornado;
+	} //cierre de la función
+
+
+
+	/**
+	 * Realiza consultas tomando los datos del constructor y compara donde hay consultas
 	 * y donde no para poder tomar los nombres y apellidos ya que puede no tener datos
 	 * registrados en un organismo pero si en otro.
 	 * @return array $arrNombres, Arreglo con los nombres y apellidos
 	 */
-	public function flBuscarNombres() {
-		$arrConsultaCNE = $this->flBuscarCNE() ;
-		$arrConsultaIVSS = $this->flBuscarIVSS() ;
-		$arrConsultaSENIAT = $this->flBuscarSENAT() ;
+	public function flBuscarNombres()
+	{
+		$arrConsultaCNE = $this->flBuscarCNE();
+		$arrConsultaIVSS = $this->flBuscarIVSS();
+		$arrConsultaSENIAT = $this->flBuscarSENAT();
 
 		$vsPriNombre = "";
 		$vsSegNombre = "";
 		$vsPriAellido = "";
 		$vsSegApellido = "";
 
-		if ( $arrConsultaCNE["primer_nombre"] != null ) {
+		if ($arrConsultaCNE["primer_nombre"] != null) {
 			$vsPriNombre = $arrConsultaCNE["primer_nombre"];
 			$vsSegNombre = $arrConsultaCNE["segundo_nombre"];
 			$vsPriAellido = $arrConsultaCNE["primer_apellido"];
-			$vsSegApellido = $arrConsultaCNE["segundo_apellido"]; 
+			$vsSegApellido = $arrConsultaCNE["segundo_apellido"];
 		}
 
-		if ( $arrConsultaIVSS["primer_nombre"] != null ) {
+		if ($arrConsultaIVSS["primer_nombre"] != null) {
 			$vsPriNombre = $arrConsultaIVSS["primer_nombre"];
 			$vsSegNombre = $arrConsultaIVSS["segundo_nombre"];
 			$vsPriAellido = $arrConsultaIVSS["primer_apellido"];
-			$vsSegApellido = $arrConsultaIVSS["segundo_apellido"]; 
+			$vsSegApellido = $arrConsultaIVSS["segundo_apellido"];
 		}
 
-		if ( $arrConsultaSENIAT["primer_nombre"] != null ) {
+		if ($arrConsultaSENIAT["primer_nombre"] != null) {
 			$vsPriNombre = $arrConsultaSENIAT["primer_nombre"];
 			$vsSegNombre = $arrConsultaSENIAT["segundo_nombre"];
 			$vsPriAellido = $arrConsultaSENIAT["primer_apellido"];
-			$vsSegApellido = $arrConsultaSENIAT["segundo_apellido"]; 
+			$vsSegApellido = $arrConsultaSENIAT["segundo_apellido"];
 		}
 
-		$arrNombres = array( 
-			"primer_nombre" => $vsPriNombre ,
-			"segundo_nombre" => $vsSegNombre ,
-			"primer_apellido" => $vsPriAellido ,
-			"segundo_apellido" => $vsSegApellido 
+		$arrNombres = array(
+			"primer_nombre" => $vsPriNombre,
+			"segundo_nombre" => $vsSegNombre,
+			"primer_apellido" => $vsPriAellido,
+			"segundo_apellido" => $vsSegApellido,
+			"razon_social" => $vsPriNombre . " " . $vsSegNombre . " " . $vsPriAellido . " " . $vsSegApellido
 		);
-		return  $arrNombres;
+		return $arrNombres;
 	} //cierre de la función
 
 
@@ -762,29 +837,149 @@ class busca_VZLA {
 
 
 
-if ( isset( $_GET["get"] ) AND $_GET["get"] == "si" ) {
-
+if (isset($_REQUEST["get"]) AND $_REQUEST["get"] == "si") {
 	//var_dump($_GET);
-	
-	$digito = isset( $_GET['digito']) ? $_GET['digito'] : "";;
-	$tipo = isset( $_GET['nac']) ? $_GET['nac'] : "";
-	$documento = isset( $_GET['documento']) ? $_GET['documento'] : "";
 
+	$digito = isset($_REQUEST['digito']) ? $_REQUEST['digito'] : "";;
+	$tipo = isset($_REQUEST['nac']) ? $_REQUEST['nac'] : "";
+	$documento = isset($_REQUEST['documento']) ? $_REQUEST['documento'] : "";
 
-	$objVzla = new busca_VZLA( $tipo , $documento , $digito );
-	//$objVzla = new busca_VZLA( "v" , "13354427" , "7" );
+	//$objVzla = new busca_VZLA($tipo, $documento, $digito);
+	$objVzla = new busca_VZLA("v", "24587403", "7");
 
 	echo "<hr> <pre>";
 
+	//var_dump( $objVzla->flCalcularDigito());
 
-	var_dump(  $objVzla->flCalcularDigito() );
-
-	//$objVzla->flCalcularDigito() ;
-
-	$arrTodo = $objVzla->flBuscarCNE( );
-	var_dump( $arrTodo );
-	
+	//$objVzla->flCalcularDigito();
+	$arrTodo = $objVzla->flBuscarCNE();
+	//var_dump($arrTodo);
 }
+
+
+
+
+function getNombreApellido($psNombres = "eduardo antonio dominguez de abreu")
+{
+	if ($psNombres != "") {
+		$psNombres = strtoupper($psNombres);
+		$arrDatos = explode(" ", $psNombres);
+		$arrListo = array();
+		$viElemtos = count($arrDatos);
+
+		$vsParte = "DE" || "DEL" || "LA" || "LAS" || "LO" || "LOS";
+		$vsNo = " " || "";
+
+		$viCont = 1;
+		//$viCont2 = 0;
+		$arrCorrecto = array();
+
+
+
+
+		/*
+		for ($viCont = 0; $viCont < $viElemtos; $viCont++) {
+			if ($arrDatos[$viCont] == " ") {
+				$arrOtro[$viCont2] = " o ";
+				//echo $viCont2;
+				$viCont2 ++;
+			}
+			elseif ($arrDatos[$viCont] == $vsParte) {
+				$arrOtro[$viCont2] = $arrDatos[$viCont];
+				//echo $viCont2;
+				//$viCont2 ++;
+			}
+			else {
+				$arrOtro[$viCont2] =  $arrDatos[$viCont];
+				$viCont2 ++;
+			}
+
+		}
+		*/
+
+		/*
+		$arrCorrecto[0] = $arrDatos[0]; //el nombre siempre es la primera posición
+		$primer_nombre = $arrCorrecto[0]; //el nombre siempre es la primera posición
+		foreach ($arrDatos as $key => $value) {
+			if ($value ==  $vsNo){
+				if ($arrCorrecto[$viCont] == $arrCorrecto[$viCont-1]){
+					$viCont++;
+				}
+			}
+			elseif ($value ==  $vsParte){
+				$viCont++;
+				$arrCorrecto[$viCont] .= $value;
+			}
+			else {
+				$arrCorrecto[$viCont] .= $value;
+			}
+			echo "<hr>";
+		}
+		var_dump($arrCorrecto);
+		*/
+
+
+
+		//var_dump($viElemtos);
+		//var_dump($psNombres);
+		echo "datos del cne <hr>";
+		var_dump($viElemtos);
+
+		//identifica y evalúa el lenguaje natural en dichas posiciones para que se coloquen
+		//en el orden correcto, de lo contrario un nombre como MARIA DE LOS ANGELES ocuparía
+		//como apellido LOS ANGELES
+
+		$arrListo = array(
+			0 => strtolower($arrDatos[0]),
+			'primer_nombre' => strtolower($arrDatos[0]),
+
+			1 => strtolower($lsSegundo_nombre),
+			'segundo_nombre' => strtolower($lsSegundo_nombre),
+
+			2 => strtolower($lsPri_Apellido),
+			'primer_apellido' => strtolower($lsPri_Apellido),
+
+			3 => strtolower($lsSeg_Apellido),
+			'segundo_apellido' => strtolower($lsSeg_Apellido),
+
+			4 => 0,
+
+			'error' => 0
+		);
+	}
+	else {
+		$arrListo = array(
+			0 => null,
+			'primer_nombre' => null,
+
+			1 => null,
+			'segundo_nombre' => null,
+
+			2 => null,
+			'primer_apellido' => null,
+
+			3 => null,
+			'segundo_apellido' => null,
+
+			4 => null,
+			'error' => 0
+		);
+	}
+
+	return $arrListo;
+} //cierre de la función
+
+
+/*
+
+$objVzla = new b
+
+echo "<pre>";
+var_dump(getNombreApellido());
+echo "</pre>";
+//*/
+
+
 //*/
 
 /*
@@ -802,34 +997,20 @@ if ( isset( $_GET["get"] ) AND $_GET["get"] == "si" ) {
     $xxx = explode("\n\r\n", $xxx1);
     // Con este comando podemos ver toda la pantalla de seniat impresa por reglones de arreglos
     // print_r($xxx);
-    // Impreme el rif y la razon social
+    // Imprime el rif y la razón social
     print_r($xxx[6]);
-    //var_dump(  $xxx[6]);    
-*/
+    //var_dump( $xxx[6]);
+//*/
 
 
 
 // 2 palabra
 // 21060773 LUISANGEL CUELLAR FERNANDEZ, sin segundo nombre y 2 apellidos
 // 24683227 ANERLINDA BERRIO DE RODRIGUEZ, sin segundo nombre con apellido de casada
-// 6palabras 23052661, MARIA DE LOS ANGELES VALDEZ ESCALONA
-// 5palabras 12527699 GREGORIA DEL CARMEN TORREALBA BARAZARTE
-// 26147205 YENIFER PAOLA PALENCIA , si segundo apellido
+// 6 palabras 23052661, MARIA DE LOS ANGELES VALDEZ ESCALONA
+// 5 palabras 12527699 GREGORIA DEL CARMEN TORREALBA BARAZARTE
+// 26147205 YENIFER PAOLA PALENCIA, si segundo apellido
 // http://pastebin.com/3QfhneaA
 
 
-
-
-/*
-class console {
-	 
-	 public static function log( $psMensaje = "PHP consola" , $psTipo = "log" ) {
-		echo '
-			<script type="text/javascript">
-				console.' . $psTipo . '("' . json_encode( $psMensaje ) . '")
-			</script>';
-	 }
-}
-*/
 ?>
-
